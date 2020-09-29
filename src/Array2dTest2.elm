@@ -1533,6 +1533,12 @@ z13 = d2d z11
 z14 = cloneAutoArray2D z11
 
 ----------------------------------------------------------
+evalCell_func :  Cell -> Cell
+evalCell_func  cell =
+          { cell | name ="XXX"}
+
+
+----------------------------------------------------------
 insertRow_func : Int -> Cell -> Cell
 insertRow_func row cell =
      let
@@ -1772,6 +1778,8 @@ f15 = insertRowAutoArray2D 1 insertRow_func f11
 f16 = insertColAutoArray2D 1 insertCol_func f11
 f150 = deleteRowAutoArray2D 1 deleteRow_func f15
 f160 = deleteColAutoArray2D 1 deleteCol_func f16
+
+f151 = cellEvalAutoArray2D 2 1 evalCell_func f15
 
 f17 = insertRowAutoArray2D 0 insertRow_func f11
 f18 = insertColAutoArray2D 0 insertCol_func f11
