@@ -4,6 +4,7 @@ import Array
 import Array2D
 import Array2dOp
 import Regex
+import Math
 
 
 {--
@@ -439,14 +440,28 @@ cellSetAutoArray2D r_ c_ cell autoarray2d_ =
 -------------------------
 
 
-
 cellEvalAutoArray2D :
     Int
     -> Int
     -> ( a -> a )
     -> AutoArray2D a
     -> AutoArray2D a
-cellEvalAutoArray2D t_r t_c func aa2d_ =
+cellEvalAutoArray2D r c func aa2d_ =
+    let
+      cell = cellGetAutoArray2D r c aa2d_
+      new_cell = func aa2d_ cell
+    in
+    cellSetAutoArray2D r c new_cell aa2d_
+
+          
+
+cellEvalAutoArray2D2 :
+    Int
+    -> Int
+    -> ( a -> a )
+    -> AutoArray2D a
+    -> AutoArray2D a
+cellEvalAutoArray2D2 t_r t_c func aa2d_ =
     let
       row_max = aa2d_.head_size_x * aa2d_.surface_size
       col_max = aa2d_.head_size_y * aa2d_.surface_size
@@ -489,7 +504,6 @@ cellEvalAutoArray2D t_r t_c func aa2d_ =
       result = row_recur_walk  0 0  new_aa2d_ aa2d_ 
     in
     result
-
 
 
 
@@ -1533,11 +1547,116 @@ z13 = d2d z11
 z14 = cloneAutoArray2D z11
 
 ----------------------------------------------------------
-evalCell_func :  Cell -> Cell
-evalCell_func  cell =
-          { cell | name ="XXX"}
+evalCell_func :  AutoArray2D a -> Cell -> Cell
+evalCell_func aa2d_  cell =
+   let
+     regex_ptn1 = "\\[\\s*\\d+\\s*\\]"
+     maybeRegex1 = Regex.fromString  regex_ptn1
+     
+     regex1 = Maybe.withDefault Regex.never maybeRegex1
+     
+     
+     regex_ptn2 = "\\[|\\]"
+     maybeRegex2 = Regex.fromString  regex_ptn2
+     
+     regex2 = Maybe.withDefault Regex.never maybeRegex2
+     
+     ------
+     f = Regex.contains regex1 cell.formula.f
+     match = Regex.find regex1 cell.formula.f
+
+     get_refvalue n =
+          let 
+            cellref =  case cell.ref_To of
+                         Just ref ->
+                              Array.get n ref
+                         _ ->
+                              Nothing
+
+            ref_cell = case cellref of
+                         Just cf_ ->
+                             let
+                               r_ = Tuple.first cf_
+                               c_ = Tuple.second cf_
+                             in
+                             (Just (cellGetAutoArray2D r_ c_  aa2d_))
+                         _ ->
+                             Nothing
+
+            value = case ref_cell of
+                         Just rcell_ ->
+                             rcell_.value
+                         _ ->
+                             0
+          in 
+          value
+     
+     make_entry ref =
+          let
+            num_str = Regex.replace regex2 (\_ -> "")  ref.match
+            ref_num = String.toInt num_str
+            ref_value = case ref_num of
+                           Just n ->
+                               let
+                                  ------- ref_To value get
+                                  --ans = Array.get n ref_to
+                                  ans = get_refvalue n
+                               in
+                               case ans of
+                                  Just x ->
+                                       x
+                                  _ ->
+                                       -1
+                           _ ->
+                                -1
+          in
+          {
+            m = ref.match
+           ,i = ref.index
+           ,v = ref_value
+          }
+
+     replace str n mlist =
+        let
+          marray = Array.fromList mlist
+          new_str = if n > (Array.length marray) then
+                       str
+                    else
+                       let
+                         entry = Array.get n marray
+                         new_str_ = case entry of
+                              Just entry_ ->
+                                  let
+                                    split_list = String.split entry_.m str
+                                    split_array = Array.fromList split_list
+                                    left = case  (Array.get 0 split_array ) of
+                                            Just str_ -> str_
+                                            r_ -> ""
+                                    right = case  (Array.get 1 split_array ) of
+                                            Just str_ -> str_
+                                            r_ -> ""
+     
+                                    mid = String.fromInt entry_.v
+                                  in
+                                  left ++ mid ++ right
+                              _ ->
+                                  str
+                       in
+                       replace new_str_ (n + 1) mlist
+        in
+        new_str
+
+     ml = List.map make_entry match
+     formula_ = replace cell.formula.f 0 ml
+     result =  Math.run formula_
+
+   in
+   { cell | name ="XX"}
 
 
+evalCell_func2 :  Cell -> Cell
+evalCell_func2  cell =
+          { cell | name ="XX"}
 ----------------------------------------------------------
 insertRow_func : Int -> Cell -> Cell
 insertRow_func row cell =
@@ -1780,6 +1899,7 @@ f150 = deleteRowAutoArray2D 1 deleteRow_func f15
 f160 = deleteColAutoArray2D 1 deleteCol_func f16
 
 f151 = cellEvalAutoArray2D 2 1 evalCell_func f15
+--f152 = cellEvalAutoArray2D2 2 1 evalCell_func f15
 
 f17 = insertRowAutoArray2D 0 insertRow_func f11
 f18 = insertColAutoArray2D 0 insertCol_func f11
