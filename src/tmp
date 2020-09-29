@@ -309,31 +309,23 @@ cellSetAutoArray2D :
     -> a
     -> AutoArray2D a
     -> AutoArray2D a
-cellSetAutoArray2D r_ c_ cell autoarray2d_ =
+cellSetAutoArray2D c_ r_ cell autoarray2d_ =
     let
         --_ = Debug.log "--cellSetAutoArray2D"  0
         head_ =
             autoarray2d_.head
 
-       {--
-             +--- y
-             |
-             |
-             x
-
-       --}
-
         x_ =
-            r_ // autoarray2d_.surface_size
-
-        y_ =
             c_ // autoarray2d_.surface_size
 
+        y_ =
+            r_ // autoarray2d_.surface_size
+
         x_a =
-            r_ - (x_ * autoarray2d_.surface_size)
+            c_ - (x_ * autoarray2d_.surface_size)
 
         y_a =
-            c_ - (y_ * autoarray2d_.surface_size)
+            r_ - (y_ * autoarray2d_.surface_size)
 
         surface =
             Array2D.get x_ y_ head_
@@ -392,16 +384,16 @@ cellSetAutoArray2D r_ c_ cell autoarray2d_ =
             autoarray2d_2.head
 
         x_2 =
-            r_ // autoarray2d_2.surface_size
-
-        y_2 =
             c_ // autoarray2d_2.surface_size
 
+        y_2 =
+            r_ // autoarray2d_2.surface_size
+
         x_a2 =
-            r_ - (x_2 * autoarray2d_2.surface_size)
+            c_ - (x_2 * autoarray2d_2.surface_size)
 
         y_a2 =
-            c_ - (y_2 * autoarray2d_2.surface_size)
+            r_ - (y_2 * autoarray2d_2.surface_size)
 
         surface_ =
             Array2D.get x_2 y_2 head_2
@@ -437,60 +429,6 @@ cellSetAutoArray2D r_ c_ cell autoarray2d_ =
     { autoarray2d_2 | head = new_head }
 
 -------------------------
-
-
-
-cellEvalAutoArray2D :
-    Int
-    -> Int
-    -> ( a -> a )
-    -> AutoArray2D a
-    -> AutoArray2D a
-cellEvalAutoArray2D t_r t_c func aa2d_ =
-    let
-      row_max = aa2d_.head_size_x * aa2d_.surface_size
-      col_max = aa2d_.head_size_y * aa2d_.surface_size
-
-      new_aa2d_ = initAutoArray2D aa2d_.head_size_x
-                                  aa2d_.head_size_y
-                                  aa2d_.surface_size
-                                  aa2d_.defaultCell
-
-      --
-      -- inter function
-      col_recur_walk  r c new_aa2d__2 aa2d__2 =
-              if c >= col_max then
-                new_aa2d__2
-
-              else
-                let
-                  cell_old = cellGetAutoArray2D r c aa2d__2
-
-                  new_aa2d__3 = if r == t_r && c == t_c   then
-                                   let
-                                     new_cell = func cell_old
-                                   in
-                                   cellSetAutoArray2D r c new_cell new_aa2d__2
-                                else
-                                   cellSetAutoArray2D r c cell_old new_aa2d__2
-                in
-                col_recur_walk  r  (c + 1) new_aa2d__3 aa2d__2
-
-      row_recur_walk  r c new_aa2d__ aa2d__ =
-              if r >= row_max then
-                new_aa2d__
-              else
-                let
-                  new_aa2d__2 =  col_recur_walk  r c new_aa2d__ aa2d__
-                in
-                row_recur_walk  (r + 1) c new_aa2d__2 aa2d__
-
-          
-      result = row_recur_walk  0 0  new_aa2d_ aa2d_ 
-    in
-    result
-
-
 
 
 
@@ -929,9 +867,9 @@ deleteRowAutoArray2D  delete_row_index func aa2d_ =
                 let
                   --cell = cellGetAutoArray2D r c aa2d__2
                   cell_old = cellGetAutoArray2D r c aa2d__2
-                  cell = func delete_row_index_ cell_old
+                  cell = func delete_row_index cell_old
 
-                  new_aa2d__3 = if r >   delete_row_index_ then
+                  new_aa2d__3 = if r >=  delete_row_index_ then
                                    cellSetAutoArray2D (r-1) c cell new_aa2d__2
                                 else
                                    cellSetAutoArray2D r c cell new_aa2d__2
@@ -973,9 +911,9 @@ deleteColAutoArray2D  delete_col_index func aa2d_ =
                 let
                   --cell = cellGetAutoArray2D r c aa2d__2
                   cell_old = cellGetAutoArray2D r c aa2d__2
-                  cell = func delete_col_index_ cell_old
+                  cell = func delete_col_index cell_old
 
-                  new_aa2d__3 = if c >   delete_col_index_ then
+                  new_aa2d__3 = if c >=  delete_col_index_ then
                                    cellSetAutoArray2D r (c-1) cell new_aa2d__2
                                 else
                                    cellSetAutoArray2D r c cell new_aa2d__2
@@ -1177,7 +1115,7 @@ cellSetValueAutoArray2D :
     -> AutoArray2D Cell
     -> AutoArray2D Cell
 
-cellSetValueAutoArray2D r_ c_ value autoarray2d_ =
+cellSetValueAutoArray2D c_ r_ value autoarray2d_ =
     let
      value_ =  case value of
                  SetInt x ->
@@ -1185,7 +1123,7 @@ cellSetValueAutoArray2D r_ c_ value autoarray2d_ =
                  SetString s ->
                       StringCell s
     in
-    cellSetAutoArray2D r_ c_ { name = "fc"
+    cellSetAutoArray2D c_ r_ { name = "fc"
                               , value = value_ 
                               , formula = { eval = False, f = "" } 
                               , ref_To = Nothing
@@ -1645,7 +1583,7 @@ deleteRow_func row cell =
                                   --r = Tuple.first cellref
                                   --c = Tuple.second cellref
                                   (r,c) = cellref
-                                  new_r = if r >  row then
+                                  new_r = if r >= row then
                                              r - 1
                                           else
                                              r
@@ -1664,8 +1602,10 @@ deleteRow_func row cell =
                              fr2 : CellRef -> CellRef
                              fr2 cellref =
                                  let
+                                  --r = Tuple.first cellref
+                                  --c = Tuple.second cellref
                                   (r,c) = cellref
-                                  new_r = if r >  row then
+                                  new_r = if r >= row then
                                              r - 1
                                           else
                                              r
@@ -1689,8 +1629,10 @@ deleteCol_func col cell =
                              fc1 : CellRef -> CellRef
                              fc1 cellref =
                                  let
+                                  --r = Tuple.first cellref
+                                  --c = Tuple.second cellref
                                   (r,c) = cellref
-                                  new_c = if c >  col then
+                                  new_c = if c >= col then
                                              c - 1
                                           else
                                              c
@@ -1712,7 +1654,7 @@ deleteCol_func col cell =
                                   --r = Tuple.first cellref
                                   --c = Tuple.second cellref
                                   (r,c) = cellref
-                                  new_c = if c >  col then
+                                  new_c = if c >= col then
                                              c - 1
                                           else
                                              c
@@ -1770,8 +1712,6 @@ f11 =
 
 f15 = insertRowAutoArray2D 1 insertRow_func f11
 f16 = insertColAutoArray2D 1 insertCol_func f11
-f150 = deleteRowAutoArray2D 1 deleteRow_func f15
-f160 = deleteColAutoArray2D 1 deleteCol_func f16
 
 f17 = insertRowAutoArray2D 0 insertRow_func f11
 f18 = insertColAutoArray2D 0 insertCol_func f11

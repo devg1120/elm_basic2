@@ -29,17 +29,17 @@ text = "[0] + [1] *[2]"
 regex_ptn1 = "\\[\\s*\\d+\\s*\\]"
 maybeRegex1 = Regex.fromString  regex_ptn1
 
-regex1 = Maybe.withDefault Regex.never maybeRegex1
+regex = Maybe.withDefault Regex.never maybeRegex1
+
+f = Regex.contains regex text
+
+m = Regex.find regex text
 
 
 regex_ptn2 = "\\[|\\]"
 maybeRegex2 = Regex.fromString  regex_ptn2
 
 regex2 = Maybe.withDefault Regex.never maybeRegex2
-
-------
-f = Regex.contains regex1 text
-match = Regex.find regex1 text
 
 make_entry ref =
     let
@@ -50,7 +50,6 @@ make_entry ref =
       ref_value = case ref_num of
                      Just n ->
                          let
-                            ------- ref_To value get
                             ans = Array.get n ref_to
                          in
                          case ans of
@@ -67,7 +66,7 @@ make_entry ref =
      ,v = ref_value
     }
 
-ml = List.map make_entry match
+ml = List.map make_entry m
 
 --m3 = String.split "[0]" text
 --m4 = String.split "[1]" text
