@@ -1,0 +1,12 @@
+# elm-package generated files
+elm-stuff/
+# elm-repl generated files
+repl-temp-*
+
+elm.js
+
+# parcel env
+node_modules 
+dist
+.cache
+

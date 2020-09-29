@@ -1,0 +1,140 @@
+module Array2dTest2 exposing (..)
+
+import Array2D
+import Array2dOp
+
+
+{--
+
+  defaultCell :  String
+  defaultCell = "@"
+
+    array2Dexpand 10 10  defaultCell array2d
+
+    array2Dtrans 0 0  2 2 8 8   defaultCell n12
+
+    array2Dcopy 0 0  2 2 8 8    n12
+
+    array2Dclear 0 0  2 2  defaultCell n12
+
+    array2Dget 0 0  2 2  defaultCell n12
+
+    array2Dset 8 8  n16 n12
+
+    array2Dhjoin   defaultCell n16 n16
+
+    array2Dvjoin   defaultCell n16 n16
+
+--}
+
+---------------------------------------------------
+
+array2d =
+    Array2D.fromList
+      [ ["Row 1-Col 1", "Row 1-Col 2"]
+      , ["Row 2-Col 1", "Row 2-Col 2"]
+      ]
+
+defaultCell :  String
+defaultCell = "@"
+
+n12 = 
+    Array2dOp.array2Dexpand 10 10  defaultCell array2d
+
+n13 = 
+    Array2dOp.array2Dtrans 0 0  2 2 8 8   defaultCell n12
+    --array2Dtrans 0 0  2 2 1 1   defaultCell n12
+
+n14 = 
+    Array2dOp.array2Dcopy 0 0  2 2 8 8    n12
+
+n15 = 
+    Array2dOp.array2Dclear 0 0  2 2  defaultCell n12
+    --array2Dclear 0 0  2 2  "--" n12
+
+n16 = 
+    Array2dOp.array2Dget 0 0  2 2  defaultCell n12
+
+n17 = 
+    Array2dOp.array2Dset 8 8  n16 n12
+
+n18 = 
+    Array2dOp.array2Dhjoin   defaultCell n16 n16
+
+n19 = 
+    Array2dOp.array2Dvjoin   defaultCell n16 n16
+
+
+---------------------------------------------------
+
+
+---------------------------------------------------
+type alias AutoArray2D a =
+    -- { head : Array2D.Array2D Bool
+    { head : Array2D.Array2D (Maybe (Array2D.Array2D a))
+    , head_size : Int
+    , surface_size : Int
+    , defaultCell : a
+    }
+---------------------------------------------------
+initAutoArray2D : Int -> Int -> a -> AutoArray2D a
+initAutoArray2D  head_size_ surface_size_ defaultCell_ =
+    let
+       -- data = Array2D.repeat size_ size_ Fale
+       head_ = Array2D.repeat head_size_ head_size_ Nothing
+
+    in
+       {
+          head = head_
+        , head_size = head_size_
+        , surface_size = surface_size_
+        , defaultCell = defaultCell_
+       }
+    
+{--
+    head size 6
+    surface size 2
+
+    head                     surface
+    -- -- -- -- -- --         -- --
+   |@@|  |  |  |  |  |  @@=> |  |  |
+    -- -- -- -- -- --         -- --
+   |  |  |  |  |  |  |       |  |  |
+    -- -- -- -- -- --         -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+
+--}
+
+setAutoArray2D : Int -> Int -> (Maybe (Array2D.Array2D a)) -> AutoArray2D a -> AutoArray2D a
+setAutoArray2D   x_ y_ array2d_ autoarray2d_ =
+    let
+        head_ = autoarray2d_.head
+        new_head = Array2D.set x_ y_  array2d_   head_
+
+    in
+     {
+       autoarray2d_ | head = new_head
+     }
+
+
+p : String -> String
+p str =
+   let _ = Debug.log str  in
+   "OK"
+
+--------------------------------------------
+
+a20 = initAutoArray2D 10 10 "&&"
+
+a21 = Array2D.repeat  10 10 "@"
+
+a22 = setAutoArray2D 0 0 (Maybe.Just a21) a20
+a23 = setAutoArray2D 0 0 (Maybe.Nothing)  a22
+

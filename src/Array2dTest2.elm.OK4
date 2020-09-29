@@ -1,0 +1,600 @@
+module Array2dTest2 exposing (..)
+import Array
+import Array2D
+import Array2dOp
+
+
+{--
+
+  defaultCell :  String
+  defaultCell = "@"
+
+    array2Dexpand 10 10  defaultCell array2d
+
+    array2Dtrans 0 0  2 2 8 8   defaultCell n12
+
+    array2Dcopy 0 0  2 2 8 8    n12
+
+    array2Dclear 0 0  2 2  defaultCell n12
+
+    array2Dget 0 0  2 2  defaultCell n12
+
+    array2Dset 8 8  n16 n12
+
+    array2Dhjoin   defaultCell n16 n16
+
+    array2Dvjoin   defaultCell n16 n16
+
+--}
+
+---------------------------------------------------
+
+array2d =
+    Array2D.fromList
+      [ ["Row 1-Col 1", "Row 1-Col 2"]
+      , ["Row 2-Col 1", "Row 2-Col 2"]
+      ]
+
+defaultCell :  String
+defaultCell = "@"
+
+n12 = 
+    Array2dOp.array2Dexpand 10 10  defaultCell array2d
+
+n13 = 
+    Array2dOp.array2Dtrans 0 0  2 2 8 8   defaultCell n12
+    --array2Dtrans 0 0  2 2 1 1   defaultCell n12
+
+n14 = 
+    Array2dOp.array2Dcopy 0 0  2 2 8 8    n12
+
+n15 = 
+    Array2dOp.array2Dclear 0 0  2 2  defaultCell n12
+    --array2Dclear 0 0  2 2  "--" n12
+
+n16 = 
+    Array2dOp.array2Dget 0 0  2 2  defaultCell n12
+
+n17 = 
+    Array2dOp.array2Dset 8 8  n16 n12
+
+n18 = 
+    Array2dOp.array2Dhjoin   defaultCell n16 n16
+
+n19 = 
+    Array2dOp.array2Dvjoin   defaultCell n16 n16
+
+
+---------------------------------------------------
+
+
+---------------------------------------------------
+type alias AutoArray2D a =
+    { head : Array2D.Array2D (Maybe (Array2D.Array2D a))
+    , head_size_x : Int
+    , head_size_y : Int
+    , surface_size : Int
+    , defaultCell : a
+    }
+---------------------------------------------------
+info :  AutoArray2D a ->  { defaultCell : a, head_size_x : Int, head_size_y : Int , surface_size : Int }
+info a2d =
+   {
+       head_size_x = a2d.head_size_x
+     , head_size_y = a2d.head_size_y
+     , surface_size = a2d.surface_size
+     , defaultCell = a2d.defaultCell
+   }
+
+initAutoArray2D : Int -> Int -> Int -> a -> AutoArray2D a
+initAutoArray2D  head_size_x head_size_y surface_size_ defaultCell_ =
+    let
+       head_ = Array2D.repeat head_size_x head_size_y Nothing
+
+    in
+       {
+          head = head_
+        , head_size_x = head_size_x
+        , head_size_y = head_size_y
+        , surface_size = surface_size_
+        , defaultCell = defaultCell_
+       }
+    
+{--
+    head size x 6
+    head size y 6
+    surface size 2
+
+    head                     surface
+    -- -- -- -- -- --         -- --
+   |@@|  |  |  |  |  |  @@=> |  |  |
+    -- -- -- -- -- --         -- --
+   |  |  |  |  |  |  |       |  |  |
+    -- -- -- -- -- --         -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+   |  |  |  |  |  |  |
+    -- -- -- -- -- --
+
+--}
+
+headSetAutoArray2D : Int -> Int ->  (Array2D.Array2D a) -> AutoArray2D a -> AutoArray2D a
+headSetAutoArray2D   x_ y_ array2d_ autoarray2d_ =
+    let
+        head_ = autoarray2d_.head
+        new_head = Array2D.set x_ y_  (Maybe.Just array2d_)   head_
+
+    in
+     {
+       autoarray2d_ | head = new_head
+     }
+
+headDelAutoArray2D : Int -> Int ->  AutoArray2D a -> AutoArray2D a
+headDelAutoArray2D   x_ y_  autoarray2d_ =
+    let
+        head_ = autoarray2d_.head
+        new_head = Array2D.set x_ y_  Maybe.Nothing   head_
+
+    in
+     {
+       autoarray2d_ | head = new_head
+     }
+
+{-- h  y => sueface --}
+surfaceGetAutoArray2D : Int -> Int ->  AutoArray2D a -> (Maybe (Maybe (Array2D.Array2D a)))
+surfaceGetAutoArray2D   x_ y_  autoarray2d_ =
+    let
+        head_ = autoarray2d_.head
+        head_part = Array2D.get x_ y_   head_
+     in
+       head_part
+
+{-- cow row => sueface --}
+relativeSurfaceGetAutoArray2D : Int -> Int ->  AutoArray2D a -> (Maybe (Maybe (Array2D.Array2D a)))
+relativeSurfaceGetAutoArray2D   c_ r_  autoarray2d_ =
+    let
+        head_ = autoarray2d_.head
+        x_ = c_ // autoarray2d_.surface_size 
+        y_ = r_ // autoarray2d_.surface_size   
+        head_part = Array2D.get x_ y_   head_
+     in
+       head_part
+       
+
+cellGetAutoArray2D : Int -> Int -> AutoArray2D a ->  a
+cellGetAutoArray2D   c_ r_  autoarray2d_ =
+    let
+        head_ = autoarray2d_.head
+        x_ = c_ // autoarray2d_.surface_size 
+        y_ = r_ // autoarray2d_.surface_size   
+        x_a = c_  - ( x_ * autoarray2d_.surface_size )
+        y_a = r_  - ( y_ * autoarray2d_.surface_size ) 
+        surface = Array2D.get x_ y_   head_
+    
+        te = case surface of
+             Just surface2 ->
+                   case surface2 of
+                      Just surface3 ->
+                         let
+                          cell = Array2D.get x_a y_a surface3
+                         in
+                         case cell of 
+                            Just cell2 ->
+                               cell2
+                            _ ->
+                               --defaultcell
+                               autoarray2d_.defaultCell
+                      _ ->
+                         --defaultcell
+                         autoarray2d_.defaultCell
+             _ ->
+                   --defaultcell
+                   autoarray2d_.defaultCell
+     in
+        te
+
+expandAutoArray2D : Int -> Int -> Array2D.Array2D (Maybe (Array2D.Array2D a)) 
+                               -> Array2D.Array2D (Maybe (Array2D.Array2D a))
+expandAutoArray2D rowsnum colsnum  orgArray2D =
+    let
+      _ = Debug.log "expand rows:" rowsnum
+      _ = Debug.log "expand cols:" colsnum
+      baseArray2D =
+          Array2D.repeat rowsnum colsnum Maybe.Nothing
+
+      cellReplace: Int -> Int ->  Maybe (Array2D.Array2D a) ->  Maybe (Array2D.Array2D a)
+      cellReplace row col cell =
+          let
+            data = Array2D.get row col orgArray2D
+          in
+            case data of
+                Nothing ->
+                     cell
+                Just newcell ->
+                     newcell
+    in
+    Array2D.indexedMap cellReplace baseArray2D
+
+cellSetAutoArray2D : Int -> Int -> a -> AutoArray2D a
+                                     ->  AutoArray2D a
+cellSetAutoArray2D   c_ r_ cell autoarray2d_ =
+    let
+        --_ = Debug.log "--cellSetAutoArray2D"  0
+        head_ = autoarray2d_.head
+        x_ = c_ // autoarray2d_.surface_size 
+        y_ = r_ // autoarray2d_.surface_size   
+        x_a = c_  - ( x_ * autoarray2d_.surface_size )
+        y_a = r_  - ( y_ * autoarray2d_.surface_size ) 
+        surface = Array2D.get x_ y_   head_
+    
+        -- hard over to expand array2d --
+
+        autoarray2d_2 = 
+              if x_ >= autoarray2d_.head_size_x && y_ >= autoarray2d_.head_size_y then
+                           let 
+                              _ = Debug.log "*** surface size over x & y"  0
+                              head_t = expandAutoArray2D (x_+1) (y_+1)  head_
+
+                           in
+                           { head = head_t
+                              ,head_size_x = x_ + 1
+                              ,head_size_y = y_ + 1
+                              ,surface_size = autoarray2d_.surface_size
+                              ,defaultCell = autoarray2d_.defaultCell
+                            }
+              else if x_ >= autoarray2d_.head_size_x  then
+                           let 
+                              _ = Debug.log "*** surface size over  y"  0
+                              head_t = expandAutoArray2D (x_+1) autoarray2d_.head_size_y  head_
+
+                           in
+                           { head = head_t
+                              ,head_size_x = x_ + 1
+                              ,head_size_y = autoarray2d_.head_size_y
+                              ,surface_size = autoarray2d_.surface_size
+                              ,defaultCell = autoarray2d_.defaultCell
+                            }
+              else if  y_ >= autoarray2d_.head_size_y then
+                           let 
+                              _ = Debug.log "*** surface size over x  "  0
+                              head_t = expandAutoArray2D autoarray2d_.head_size_x  (y_+1)  head_
+
+                           in
+                           { head = head_t
+                              ,head_size_x = autoarray2d_.head_size_x
+                              ,head_size_y = y_ + 1
+                              ,surface_size = autoarray2d_.surface_size
+                              ,defaultCell = autoarray2d_.defaultCell
+                            }
+              else
+                     autoarray2d_
+
+        head_2 = autoarray2d_2.head
+        x_2 = c_ // autoarray2d_2.surface_size 
+        y_2 = r_ // autoarray2d_2.surface_size   
+        x_a2 = c_  - ( x_2 * autoarray2d_2.surface_size )
+        y_a2 = r_  - ( y_2 * autoarray2d_2.surface_size ) 
+        surface_ = Array2D.get x_2 y_2   head_2
+        new_surface = case surface_ of
+             Just surface2 ->
+                   case surface2 of
+                      Just surface3 ->
+                         Array2D.set x_a2 y_a2 cell  surface3
+                      _ ->
+                         let
+                          surface4 = Array2D.repeat autoarray2d_2.surface_size autoarray2d_2.surface_size autoarray2d_2.defaultCell
+                         in
+                         Array2D.set x_a2 y_a2 cell  surface4
+             _ ->
+                   let
+                    -- _ = Debug.log "*** surface set" x_ 
+                    -- _ = Debug.log "*** surface set" y_
+                    surface5 = Array2D.repeat autoarray2d_2.surface_size autoarray2d_2.surface_size autoarray2d_2.defaultCell
+                   in
+                   Array2D.set x_a2 y_a2 cell  surface5
+     
+        new_head = Array2D.set x_2 y_2  (Maybe.Just new_surface)  head_2
+    in
+    { autoarray2d_2 | head = new_head }
+        
+--foldlAutoArray2D : (a -> b -> b) -> b -> AutoArray2D a -> b
+--foldlAutoArray2D : (Maybe (Array.Array (Maybe (Array2D.Array2D a))) -> b -> b) -> b -> AutoArray2D a -> b
+foldlAutoArray2D : (Array.Array (Maybe (Array2D.Array2D a)) -> b -> b) -> b -> AutoArray2D a -> b
+foldlAutoArray2D   func acc autoarray2d_ =
+    let
+       row = Array2D.getRow 0 autoarray2d_.head
+       new_head_ = Array2D.deleteRow 0 autoarray2d_.head
+       new_autoarray2d_ = { autoarray2d_ | head = new_head_ }
+    in
+--       case Array2D.isEmpty new_head_ of
+--               False ->
+--                    foldlAutoArray2D func (func row acc) new_autoarray2d_
+--               True ->
+--                    acc
+--
+       case row of
+               Just row_ ->
+                    foldlAutoArray2D func (func row_ acc) new_autoarray2d_
+               Nothing ->
+                    acc
+
+--------------------------------------------------
+
+--foldlCellPartAutoArray2D : (Array.Array a -> b -> b) -> b -> Array.Array a -> b
+foldlCellPartAutoArray2D : ( a -> b -> b) -> b -> Array.Array a -> b
+foldlCellPartAutoArray2D   func acc array =
+    let
+       -- _ = Debug.log "                cellpart array:" array
+       cell = Array.slice 0 1 array
+       value = Array.get 0 cell
+       new_array_ = Array.slice 1 (Array.length array) array
+
+     in
+        case Array.isEmpty cell of
+                False ->
+                    --foldlCellPartAutoArray2D func (func cell acc) new_array_
+                    case value of
+                       Just value_ ->
+                         foldlCellPartAutoArray2D func (func  value_ acc) new_array_
+                       Nothing ->
+                         acc
+                True ->
+                    acc
+
+
+--foldlCellAutoArray2D : (Array.Array a -> b -> b) -> b -> Array.Array a -> b
+foldlCellAutoArray2D : ( a -> b -> b) -> b -> Array.Array a -> b
+foldlCellAutoArray2D   func acc array =
+    let
+       --_ = Debug.log "                cell array:" array 
+       col = Array.slice 0 1 array
+       new_array_ = Array.slice 1 (Array.length array) array
+
+       acc2 = case Array.isEmpty col of
+                False ->
+                    --foldlCellAutoArray2D func (func col acc) new_array_
+                    foldlCellPartAutoArray2D func  acc col
+                    --acc
+                True ->
+                    acc
+    in
+       case Array.isEmpty col of
+                False ->
+                    --foldlCellAutoArray2D func (func col acc) new_array_
+                    foldlCellAutoArray2D func  acc2 new_array_
+                True ->
+                    acc2
+
+
+--foldlColAutoArray2D : (Array.Array a -> b -> b) -> b -> (Maybe (Array2D.Array2D a ))-> b
+foldlColAutoArray2D : ( a -> b -> b) -> b -> (Maybe (Array2D.Array2D a ))-> b
+foldlColAutoArray2D   func acc array2d_ =
+
+       case array2d_ of
+               Just array2d_2 ->
+                    let
+                      row = Array2D.getRow 0 array2d_2
+                      new_array2d_ = Array2D.deleteRow 0 array2d_2
+
+                    in
+                    case row of
+                            Just row_ ->
+                                     --let _ = Debug.log "          full row Just" 0 in
+                                     let
+                                       acc2 = foldlCellAutoArray2D  func acc  row_
+                                     in
+                                     foldlColAutoArray2D func acc2 (Just new_array2d_)
+                            Nothing ->
+                                     --let _ = Debug.log "          full row Nothing" 0 in
+                                     acc
+               Nothing ->
+                   acc
+{--
+    let
+       -- _ = Debug.log "                col arrat:" array 
+       col = Array.slice 0 1 array
+       new_array_ = Array.slice 1 (Array.length array) array
+
+       acc2 = case Array.isEmpty col of
+               False ->
+                        foldlCellAutoArray2D  func acc  col
+               True ->
+                        acc
+     in
+        case Array.isEmpty col of
+                False ->
+                    --foldlPartAutoArray2D func (func col acc) new_array_
+                    foldlColAutoArray2D func acc2 new_array_
+                True ->
+                    acc2
+--}
+
+--foldlPartAutoArray2D : (Array.Array a -> b -> b) -> b -> Array.Array (Maybe (Array2D.Array2D a)) -> b
+foldlPartAutoArray2D : ( a -> b -> b) -> b -> Array.Array (Maybe (Array2D.Array2D a)) -> b
+foldlPartAutoArray2D   func acc array =
+    let
+       --_ = Debug.log "                part array:" array
+       col = Array.slice 0 1 array
+       new_array_ = Array.slice 1 (Array.length array) array
+
+       array2d_ = Array.get 0 array
+       --_ = Debug.log "                part array:" array2d_
+
+       acc2 = case array2d_ of
+                Just array2d_2 ->
+                        foldlColAutoArray2D  func acc   array2d_2
+                Nothing ->
+                        acc 
+
+--       acc2 = case Array.isEmpty col of
+--               False ->
+--                        foldlColAutoArray2D  func acc   col
+--                        
+--               True ->
+--                        acc
+     in
+        case Array.isEmpty col of
+                False ->
+                    --foldlPartAutoArray2D func (func col acc) new_array_
+                    foldlPartAutoArray2D func acc2 new_array_
+                True ->
+                    acc2
+
+--foldlFullAutoArray2D : ((Array.Array  a) -> b -> b) -> b -> AutoArray2D a -> b
+foldlFullAutoArray2D : ( a -> b -> b) -> b -> AutoArray2D a -> b
+foldlFullAutoArray2D   func acc autoarray2d_ =
+    let
+       --_ = Debug.log "          full" 0
+       row = Array2D.getRow 0 autoarray2d_.head
+       new_head_ = Array2D.deleteRow 0 autoarray2d_.head
+       new_autoarray2d_ = { autoarray2d_ | head = new_head_ }
+
+       acc2 = case row of
+               Just row_ ->
+                        --let _ = Debug.log "          full row Just" 0 in
+                        foldlPartAutoArray2D  func acc  row_
+               Nothing ->
+                        --let _ = Debug.log "          full row Nothing" 0 in
+                        acc
+    in
+       case row of
+               Just row_ ->
+                    foldlFullAutoArray2D func acc2 new_autoarray2d_
+               Nothing ->
+                    acc2
+
+
+---------------------------------------------------
+p : String -> String
+p str =
+   Debug.log str  
+   "OK"
+
+{--
+d : Int -> Int -> AutoArray2D String -> (Maybe (Array2D.Array2D a))
+d c r a_ =
+   let
+     ret = cellSetAutoArray2D c r "+" a_
+     _ = Debug.log ret 0 
+   in
+    ret
+--}
+--------------------------------------------
+-- BASIC TEST
+
+a20 = initAutoArray2D 10 10 10 "_"
+
+a21 = Array2D.repeat  10 10 "@"
+
+a22 = headSetAutoArray2D 0 0  a21 a20
+a23 = headDelAutoArray2D 0 0  a22
+
+a24 = cellSetAutoArray2D 0 0 "+" a23
+a25 = cellSetAutoArray2D 99 99 "+" a24
+a26 = cellSetAutoArray2D 99 199 "+" a25
+a27 = cellSetAutoArray2D 199 99 "+" a24
+a28 = cellSetAutoArray2D 199 199 "+" a26
+
+
+func_ row acc =
+    let
+      --_ = Debug.log "func" 0
+      acc_ = acc + 1
+    in
+    acc_
+
+
+f  = foldlAutoArray2D     func_ 0 a25
+s  = foldlAutoArray2D     func_ 0 a28
+
+
+func1_ value  acc =
+    let
+      acc_ = acc + 1
+      _ = Debug.log "func:" acc_
+    in
+    acc_
+
+
+f1 = foldlFullAutoArray2D func1_ 0  a26
+s1 = foldlFullAutoArray2D func1_ 0  a28
+
+func2_ cell_value  acc =
+    let
+      num_ = acc.cell_num  + 1
+      value_ = acc.cell_value ++ cell_value
+      acc_ = {acc | cell_num = num_, cell_value = value_}
+      _ = Debug.log "func:" acc_
+    in
+    acc_
+
+
+acc_base ={
+       cell_num = 0
+      ,cell_value = ""
+      }
+
+f2 = foldlFullAutoArray2D func2_ acc_base  a26
+s2 = foldlFullAutoArray2D func2_ acc_base  a28
+
+----------------------------------------------------
+-- ADVANCED TEST
+
+
+type CellValue
+    = IntCell Int
+    | StringCell String
+
+type alias Formula 
+    = {
+        eval : Bool
+       ,f : String
+       }
+
+type alias Cell =
+  { value : CellValue
+  , formula : Formula
+  , name : String
+  }
+
+defaultCell__ : Cell
+defaultCell__ = { value = IntCell 0
+        , name = "test"
+        , formula = {
+                       eval = False
+                     , f = ""
+                    }
+        }
+
+
+g10 = initAutoArray2D 10 10 10 defaultCell__
+
+g11 = cellSetAutoArray2D  0    0   { name ="fc", value = IntCell 5 , formula = { eval = False, f = ""}}  g10
+g12 = cellSetAutoArray2D 99   99   { name ="sc", value = IntCell 7 , formula = { eval = False, f = ""}}  g11
+g13 = cellSetAutoArray2D 100 100    { name ="sc", value = IntCell 0 , formula = { eval = True,  f = "= (0,0) + (99,99)"}}  g12
+
+
+func3_ cell_value  acc =
+    let
+      num = case cell_value.value of
+              IntCell n ->
+                           n
+              _ ->
+                 0
+               
+      num_ = acc.cell_num  + num
+      acc_ = {acc | cell_num = num_}
+      --_ = Debug.log "func:" acc_
+    in
+    acc_
+
+
+g14 = foldlFullAutoArray2D func3_ acc_base  g13
+
+g15 = cellGetAutoArray2D  0  0   g13
+g16 = cellGetAutoArray2D 99 99   g13
+g17 = cellGetAutoArray2D 100 100   g13
