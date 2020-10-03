@@ -1185,90 +1185,7 @@ defaultCell__ =
 
 type SetCellValue 
      = SetInt Int
-     | SetFloat Float
      | SetString String
-
-
-cellSetFormula :
-    Int
-    -> Int
-    -> (Maybe (Array.Array CellRef))
-    -> String
-    -> AutoArray2D Cell
-    -> AutoArray2D Cell
-
-cellSetFormula r_ c_  ref_to_ f_ autoarray2d_ =
-    let
-     org_cell = cellGetAutoArray2D r_ c_ autoarray2d_
-     new_aa2d = cellSetAutoArray2D r_ c_ { name = "fc"
-                                         , value = IntCell 0
-                                         --, value = value_
-                                         , formula = { eval = False, f = f_ } 
-                                         , ref_To = (Just ref_to)
-                                         , ref_From = org_cell.ref_From
-                                         } autoarray2d_
-     --ref_from_ = org_cell.ref_From
-
-     ref_from_set : Array.Array CellRef -> AutoArray2D Cell -> AutoArray2D Cell 
-     ref_from_set rtarry aa2d_2 =
-             let
-               _ = Debug.log (Debug.toString rtarry) 0
-
-               array_walk index rt_ aa2d_3 =
-                   if index > Array.length rtarry then
-                     aa2d_3
-                   else 
-                     let
-                       cel_ref = Array.get index rt_
-                       aa2d_4 = case cel_ref of
-                           Just cr ->
-                              let
-                                 (r,c )  = cr
-                                 _ = Debug.log (Debug.toString r ) 0
-                                 _ = Debug.log (Debug.toString c ) 0
-                              in
-                              --cellUpdateAutoArray2D r c add_ref_to_func (r,c) aa2d_3
-                              let
-                                cell = cellGetAutoArray2D r c aa2d_3
-                                ref_from__ = cell.ref_From
-                                --new_ref_from = Array.push (r_,c_) ref_from__
-
-                                new_ref_from = case ref_from__ of
-                                                  Just re ->
-                                                        (Just (Array.push (r_,c_) re))
-                                                  _ ->
-                                                        (Just (Array.fromList [(r_, c_)]))
-
-
-                                new_cell = { cell | ref_From = new_ref_from }
-
-                              in
-                              cellSetAutoArray2D r c new_cell aa2d_3
-                           _ ->
-                              aa2d_3
-                     in
-                     --aa2d_4
-                     array_walk (index + 1) rtarry aa2d_4
-                    
-                      
-               aa2d_5 = array_walk 0 rtarry aa2d_2
-             in
-             aa2d_5
-
-
-
-     aa2d_ = case ref_to_ of
-         Just rtarry ->
-             let _ = Debug.log ("==" ++ (Debug.toString rtarry)) 0 in
-             ref_from_set rtarry new_aa2d
-             --new_aa2d
-         Nothing ->
-             new_aa2d
-
-     aa2d_last = cellUpdateAutoArray2D r_ c_ evalCell_func aa2d_
-    in
-    aa2d_last
-
 
 cellSetValue :
     Int
@@ -1282,8 +1199,6 @@ cellSetValue r_ c_ value autoarray2d_ =
      value_ =  case value of
                  SetInt x ->
                       IntCell x
-                 SetFloat f ->
-                      FloatCell f
                  SetString s ->
                       StringCell s
      org_cell = cellGetAutoArray2D r_ c_ autoarray2d_
@@ -1348,8 +1263,6 @@ cellSetValue2 r_ c_ value autoarray2d_ =
      value_ =  case value of
                  SetInt x ->
                       IntCell x
-                 SetFloat f ->
-                      FloatCell f
                  SetString s ->
                       StringCell s
      org_cell = cellGetAutoArray2D r_ c_ autoarray2d_
@@ -2122,24 +2035,3 @@ f12 =
                              , ref_From = Nothing
                              } 
 --}
--------------------------------------------
--- Formula TEST
-{--
-ref_to = Array.fromList [(0,0), (0,1)]
-formula = "[0] * [1]"
---ref_from = Array.fromList [(1,1)]
-
-ref_to2 = Array.fromList [(0,0), (0,1)]
-formula2 = "[0] + [1]"
-
-ref_from = Array.fromList [(1,0),(1,1)]
---}
-
-b10 =
-    initAutoArray2D 2 2 2 defaultCell__
-
-b11 = cellSetValue 0 0 (SetFloat 3) b10
-b12 = cellSetValue 0 1 (SetFloat 5) b11
-b13 = cellSetFormula 1 1 (Just (Array.fromList [(0,0),(0,1)]))  "[0] + [1]" b12
-b14 = cellSetValue 0 0 (SetFloat 9) b13
-
